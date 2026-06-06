@@ -45,14 +45,14 @@ normative:
   RFC9449:
   RFC6750:
   RFC7519:
+  RFC7518:
+  RFC7662:
+  RFC8446:
 
 informative:
   RFC9470:
   RFC9396:
-  RFC9794:
   RFC7009:
-  RFC8414:
-  RFC9068:
   I-D.ietf-oauth-attestation-based-client-auth:
     title: "OAuth 2.0 Attestation-Based Client Authentication"
     author:
@@ -85,6 +85,30 @@ informative:
     seriesinfo:
       "NIST Special Publication": "800-207"
     target: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-207.pdf
+  SHOR1994:
+    title: "Algorithms for Quantum Computation: Discrete Logarithms and Factoring"
+    author:
+      - ins: P.W. Shor
+        name: Peter W. Shor
+    date: 1994
+    seriesinfo:
+      "Proceedings of the 35th Annual Symposium on Foundations of Computer Science": "pp. 124-134"
+    target: https://doi.org/10.1109/SFCS.1994.365700
+  GROVER1996:
+    title: "A Fast Quantum Mechanical Algorithm for Database Search"
+    author:
+      - ins: L.K. Grover
+        name: Lov K. Grover
+    date: 1996
+    seriesinfo:
+      "Proceedings of the 28th Annual ACM Symposium on Theory of Computing": "pp. 212-219"
+    target: https://doi.org/10.1145/237814.237866
+  FIPS204:
+    title: "Module-Lattice-Based Digital Signature Standard"
+    author:
+      org: "NIST"
+    date: 2024-08
+    target: https://doi.org/10.6028/NIST.FIPS.204
 
 --- abstract
 
@@ -234,15 +258,15 @@ per-request resource-access layer.
 This document defines the APM problem domain and specifies functional
 requirements for a mechanism addressing the three identified gaps:
 
-1. **Gap A** ({{gap-a}}): No per-request triple consistency verification — no
+1. **Gap A** {#gap-a}: No per-request triple consistency verification — no
    normative mechanism evaluates the certificate, bound token, and device-posture
    signal together per-request.
 
-2. **Gap B** ({{gap-b}}): No graduated least-privilege outcomes — no normative
+2. **Gap B** {#gap-b}: No graduated least-privilege outcomes — no normative
    mechanism responds to posture degradation with anything other than a binary
    allow/deny decision.
 
-3. **Gap C** ({{gap-c}}): No method-level downgrade on posture degradation — no
+3. **Gap C** {#gap-c}: No method-level downgrade on posture degradation — no
    normative mechanism restricts permitted HTTP methods or operation types for
    an existing valid token in response to a runtime posture change.
 
@@ -250,6 +274,47 @@ This document is informational. It describes the problem domain and specifies
 requirements; it does not mandate a specific protocol design. Implementors,
 working group participants, and standards authors are encouraged to use the
 requirements in Section 5 as evaluation criteria for proposed solutions.
+
+## Post-Quantum Relevance {#pq-relevance}
+
+The APM mechanism is motivated not only by current Zero Trust Architecture
+requirements but also by the post-quantum cryptographic transition
+underway across the Internet.
+
+Shor's algorithm {{SHOR1994}} solves the Integer Factorization Problem
+(IFP) and the Elliptic Curve Discrete Logarithm Problem (ECDLP) in
+polynomial quantum time, meaning that a sufficiently capable
+Cryptographically Relevant Quantum Computer (CRQC) can break RSA and
+ECDSA/ECDH keys.  The TLS client certificates that form the certificate
+component of the APM Consistency View are today predominantly RSA or
+ECDSA certificates.  If a CRQC breaks the private key corresponding to
+such a certificate, the `cnf/x5t#S256` binding asserted by {{RFC8705}}
+is defeated: an attacker can present any token bound to the compromised
+certificate thumbprint and forge the TLS handshake.
+
+Grover's algorithm {{GROVER1996}} provides a quadratic speedup for
+unstructured search, effectively halving the bit-security of hash-based
+constructs.  SHA-256 hashes used in `cnf/x5t#S256` ({{RFC8705}}) and
+`cnf/jkt` ({{RFC9449}}) provide approximately 128-bit quantum preimage
+resistance — sufficient for current threat models, but motivating the
+migration to PQ-signed certificates as the certificate component of the
+Consistency View.
+
+The Harvest-Now-Decrypt-Later (HNDL) threat further amplifies the
+urgency: an adversary who records TLS sessions today can retroactively
+recover the session keys once a CRQC is available, recovering the access
+tokens exchanged within those sessions.  Per-request triple consistency
+evaluation (REQ-1 through REQ-3) and the short posture-assertion freshness
+window (Section 6.2) limit the window of exposure of any individual
+access token and its associated Consistency View to the current request
+rather than an entire session lifetime.
+
+The APM mechanism is designed to remain applicable as the OAuth ecosystem
+transitions to PQ-signed certificates: the certificate component of the
+Consistency View is algorithm-agnostic; {{RFC8705}} does not restrict the
+certificate's key type.  A Consistency View assembled from an ML-DSA
+certificate (as defined in {{FIPS204}}) functions identically to one
+assembled from an ECDSA certificate.
 
 # Conventions and Definitions {#conventions}
 
@@ -689,6 +754,14 @@ The evaluation proceeds in the following order:
 
 ## Graduated Outcome Application {#mech-outcomes}
 
+The four outcome classes are ordered by increasing restrictiveness:
+Permit < Scope Reduction < Method Restriction < Full Denial.
+A deployment policy MUST implement this ordering monotonically: if a
+degradation vector maps to Method Restriction, all more-severe degradation
+vectors MUST map to Method Restriction or Full Denial.  No degradation
+vector may map to a less-restrictive outcome than a strictly less-severe
+degradation vector, given the same policy.
+
 ### Permit {#outcome-permit}
 
 When the Consistency View is consistent with the Issuance Posture, the
@@ -778,15 +851,16 @@ sender-constraint flow (unchanged); steps 5-9 are the additional APM steps.
 ~~~
  Client          Resource Server (RS / PEP)    Authorization Server (AS)
    |                        |                            |
-   |  (1) Token Request     |                            |
-   |  (with posture signal) |                            |
-   |----------------------->|  (AS receives req)         |
-   |                        |-------------------------->|
-   |                        |  (2) Token + Issuance      |
-   |                        |  Posture recorded          |
-   |                        |<--------------------------|
+   |  (1) Token Request                                  |
+   |  (with posture signal)                              |
+   |---------------------------------------------------->|
+   |                                                     |
+   |                        |  (2) Issuance Posture      |
+   |                        |  recorded server-side      |
+   |                        |       [AS internal]        |
+   |                                                     |
    |  (3) Access Token      |                            |
-   |<-----------------------|                            |
+   |<----------------------------------------------------|
    |                        |                            |
    |  (4) Privileged        |                            |
    |  Request               |                            |
@@ -1001,20 +1075,21 @@ conditions and MUST NOT be conflated:
   security posture associated with the token does not meet the RS's requirements.
   The remedy is posture remediation followed by re-authorization.
 
-A resource server MAY issue both challenges in a single `WWW-Authenticate`
-header when both conditions are present simultaneously:
+A resource server MAY issue both challenges simultaneously. Per RFC 9110
+§11.6.1, a single response MAY include multiple `WWW-Authenticate` header
+fields, each carrying one challenge, when both conditions are present:
 
 ~~~
 HTTP/1.1 401 Unauthorized
 WWW-Authenticate: Bearer realm="example",
   error="insufficient_user_authentication",
   acr_values="urn:mace:incommon:iap:silver",
-  max_age=300,
-  Bearer realm="example",
+  max_age=300
+WWW-Authenticate: Bearer realm="example",
   error="insufficient_authorization_posture",
   error_description="Device posture below minimum threshold"
 ~~~
-{: #fig-combined-challenge title="Combined Step-Up and APM Challenge"}
+{: #fig-combined-challenge title="Combined Step-Up and APM Challenge (Two WWW-Authenticate Header Fields)"}
 
 Clients MUST resolve both challenges before retrying a request that produced
 both errors. The order in which challenges are resolved is client-defined, but
@@ -1185,7 +1260,7 @@ Change controller:
 : IETF
 
 Specification document:
-: This document, Section 7.1
+: This document, Section 6.1
 
 Description:
 : A JSON object recording the Issuance Posture at the time the access token
@@ -1208,7 +1283,7 @@ Change controller:
 : IETF
 
 Specification document:
-: This document, Section 7.3.1
+: This document, Section 6.3.1
 
 Description:
 : The request was processed under a reduced effective scope because the
@@ -1228,7 +1303,7 @@ Change controller:
 : IETF
 
 Specification document:
-: This document, Section 7.3.2
+: This document, Section 6.3.2
 
 Description:
 : The requested HTTP method is not permitted under the Method Restriction
@@ -1248,7 +1323,7 @@ Change controller:
 : IETF
 
 Specification document:
-: This document, Section 7.3.3
+: This document, Section 6.3.3
 
 Description:
 : The per-request Consistency View indicated posture degradation severe enough
@@ -1273,7 +1348,7 @@ Change controller:
 : IETF
 
 Specification document:
-: This document, Section 7.1
+: This document, Section 6.1
 
 ## Experimental OID Arc {#iana-pen}
 
