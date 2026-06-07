@@ -1,5 +1,12 @@
 # RFC Final Draft — draft-vicente-oauth-apm
 
+[![IETF Datatracker](https://img.shields.io/badge/IETF-Datatracker-blue)](https://datatracker.ietf.org/doc/draft-vicente-oauth-apm/)
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](LICENSE)
+[![Patent Pending](https://img.shields.io/badge/Patent-Pending-red.svg)](#ipr--patent-notice)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20584241.svg)](https://doi.org/10.5281/zenodo.20584241)
+[![ORCID](https://img.shields.io/badge/ORCID-0009--0006--6395--5308-A6CE39.svg)](https://orcid.org/0009-0006-6395-5308)
+
+
 **Sanctum SecOps LLC | PATENT PENDING**
 
 ## Abstract
@@ -10,7 +17,7 @@ This repository contains the IETF Internet-Draft for the Authorization Posture M
 |---|---|
 | Draft name | `draft-vicente-oauth-apm-01` |
 | Working Group | IETF OAuth WG |
-| Author | Brian Vicente `<brian@sanctumsecops.com>` |
+| Author | Brian Vicente `<bvicente@sanctumsecops.com>` |
 | Status | Individual Submission |
 | Date | 2026-06-05 |
 
