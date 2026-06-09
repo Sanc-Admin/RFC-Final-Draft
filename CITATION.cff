@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you reference this work, please cite it as below."
+authors:
+  - family-names: Vicente
+    given-names: Brian
+    orcid: https://orcid.org/0009-0006-6395-5308
+    affiliation: Sanctum SecOps LLC
+title: "OAuth Adaptive Posture Management (APM)"
+version: "01"
+date-released: "2026-06-08"
+url: "https://github.com/Sanc-Admin/oauth-apm"
+license: CC-BY-4.0
+keywords:
+  - IETF
+  - OAuth 2.0
+  - post-quantum cryptography
+  - adaptive posture management
+  - Zero Trust
+  - sanctum-secops
+  - patent-pending
