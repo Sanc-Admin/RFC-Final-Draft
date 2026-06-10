@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE rfc [
-  <!ENTITY nbsp "&#160;">
-]>
 <rfc xmlns:xi="http://www.w3.org/2001/XInclude"
      category="info"
      docName="draft-vicente-oauth-apm-01"
@@ -18,11 +15,17 @@
     <author initials="B." surname="Vicente" fullname="Brian Vicente">
       <organization>Sanctum SecOps LLC</organization>
       <address>
-        <email>brian@sanctumsecops.com</email>
+        <postal>
+          <city>Pine City</city>
+          <region>NY</region>
+          <country>United States of America</country>
+        </postal>
+        <email>bvicente@sanctumsecops.com</email>
+        <uri>https://orcid.org/0009-0006-6395-5308</uri>
       </address>
     </author>
 
-    <date year="2026" month="June" day="6"/>
+    <date year="2026" month="June" day="8"/>
 
     <area>Security</area>
     <workgroup>Web Authorization Protocol</workgroup>
@@ -59,6 +62,33 @@
         posture degradation detected.
       </t>
     </abstract>
+
+    <note title="Source and Archival" removeInRFC="true">
+      <t>
+        Source for this draft is maintained at
+        <eref target="https://github.com/Sanc-Admin/RFC-Final-Draft">https://github.com/Sanc-Admin/RFC-Final-Draft</eref>.
+        A citable archival version of this document is available at Zenodo:
+        <eref target="https://doi.org/10.5281/zenodo.20584241">https://doi.org/10.5281/zenodo.20584241</eref>.
+        Author ORCID iD:
+        <eref target="https://orcid.org/0009-0006-6395-5308">https://orcid.org/0009-0006-6395-5308</eref>.
+      </t>
+      <t>
+        Discussion of this document occurs on the IETF "oauth" mailing list
+        (oauth@ietf.org). Issues and pull requests may be filed at the GitHub
+        repository linked above.
+      </t>
+    </note>
+
+    <note title="IPR Considerations" removeInRFC="true">
+      <t>
+        The author has filed or intends to file United States patent applications
+        covering subject matter described in this document. By posting this
+        Internet-Draft, the author submits to the IETF Trust the rights described
+        in Section 5 of BCP 78 and BCP 79. Patent licensing terms are not yet known.
+        Implementers and reviewers should consult the IETF Datatracker IPR
+        disclosure page for this document for current disclosure status.
+      </t>
+    </note>
 
   </front>
 
